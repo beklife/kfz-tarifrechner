@@ -19,6 +19,13 @@ management:
       probes:
         enabled: true
 
+# Wo der vehicle-service läuft. In Docker/OpenShift kommt der Wert aus der Umgebungsvariable.
+vehicle-service:
+  base-url: ${VEHICLE_SERVICE_URL:http://localhost:8081}
+  # Nicht ewig warten: Lieber schnell "nicht erreichbar" melden als hängen.
+  connect-timeout: 2s
+  read-timeout: 2s
+
 springdoc:
   api-docs:
     enabled: false

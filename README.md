@@ -58,7 +58,34 @@ cd quote-service
 
 Tests: `./mvnw verify`
 
-_(Die API `POST /api/quotes` kommt in Phase 3.)_
+Der quote-service braucht den vehicle-service. Standard-Adresse: `http://localhost:8081`.
+Andere Adresse per Umgebungsvariable: `VEHICLE_SERVICE_URL=http://anderer-host:8081`.
+
+Beispiel-Anfrage:
+
+```bash
+curl -X POST http://localhost:8082/api/quotes \
+  -H 'Content-Type: application/json' \
+  -d '{"vehicleId":4,"driverAge":40,"accidentFreeYears":5,"coverage":"TEILKASKO"}'
+```
+
+Antwort (gekürzt):
+
+```json
+{ "vehicleName": "Rheinmobil Touring 500", "coverage": "TEILKASKO",
+  "yearlyPrice": 456.88, "monthlyPrice": 38.07,
+  "breakdown": [ { "step": 1, "description": "Grundpreis für Risikoklasse 3", "factorOrAmount": 430.00, "subtotal": 430.00 }, "..." ] }
+```
+
+### Antworten der API `POST /api/quotes`
+
+| Status | Wann | Beispiel `detail` / `errors` |
+|---|---|---|
+| 200 | Alles gut | Preis + Aufschlüsselung |
+| 400 | Eingabe ungültig | `errors: [{ field: "accidentFreeYears", message: "Die unfallfreien Jahre dürfen nicht größer sein als Alter minus 18." }]` |
+| 400 | Fahrzeug-ID gibt es nicht | `errors: [{ field: "vehicleId", message: "Das Fahrzeug mit der ID 99 gibt es nicht." }]` |
+| 503 | vehicle-service aus, zu langsam oder fehlerhaft | „Der Fahrzeugdienst ist gerade nicht erreichbar. Bitte später erneut versuchen.“ |
+| 500 | Unerwarteter Fehler | allgemeiner Text, Details nur im Log |
 
 ## Die erfundene Demo-Formel
 
@@ -98,6 +125,28 @@ _(Die API `POST /api/quotes` kommt in Phase 3.)_
 Alle Zahlen stehen in `quote-service/src/main/resources/application.yml` unter `tariff:`.
 
 ## Design-Entscheidungen
+
+### Zwei Services statt einem
+
+Fahrzeugdaten und Preisberechnung sind zwei verschiedene fachliche Themen. Darum gibt es zwei Services.
+Jeder kann einzeln geändert, deployt und skaliert werden. Zum Beispiel ändert sich der Tarif oft, die Fahrzeugliste selten.
+Für eine so kleine Anwendung wäre ein Monolith in echt einfacher. Hier geht es darum, Microservice-Kommunikation zu zeigen: REST-Aufruf, Timeouts, Fehlerbehandlung.
+
+### Timeouts beim Aufruf des vehicle-service
+
+Der quote-service wartet höchstens **2 Sekunden** auf die Verbindung und höchstens **2 Sekunden** auf die Antwort.
+Ohne Timeout könnte eine Anfrage sehr lange hängen. Viele hängende Anfragen blockieren alle Threads, und dann fällt auch der quote-service aus („Kaskadenfehler“).
+Lieber schnell und ehrlich sagen: „Gerade nicht erreichbar“ (HTTP 503).
+
+### Unbekannte Fahrzeug-ID → 400, nicht 404
+
+Die URL `/api/quotes` gibt es. Falsch ist nur ein **Wert im Body**. Ein 404 würde bedeuten: „Diese Adresse gibt es nicht.“ Dann könnte das Frontend die beiden Fälle nicht unterscheiden.
+Darum: 400 mit einem Feldfehler an `vehicleId`, genau wie bei anderen Eingabefehlern. Intern antwortet der vehicle-service mit 404. Der quote-service übersetzt das.
+
+### Readiness hängt nicht vom vehicle-service ab
+
+Wenn der vehicle-service ausfällt, bleibt der quote-service „ready“ und antwortet mit 503.
+Würde er sich selbst als „nicht bereit“ melden, nähme Kubernetes ihn aus dem Verkehr. Ein Ausfall würde sich dann wie eine Kette durch alle Services ziehen.
 
 ### Keine Datenbank
 
