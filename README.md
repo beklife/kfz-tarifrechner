@@ -103,6 +103,25 @@ Ist Port 4200 schon belegt: `npx ng serve --port 4300`.
 
 Weitere Befehle: `npm run lint` (ESLint inkl. Barrierefreiheits-Regeln), `npm test` (Unit-Tests mit Vitest).
 
+### End-to-End-Tests (Playwright + axe)
+
+```bash
+# 1. Java-Services einmal bauen (die Tests starten die fertigen JARs)
+(cd vehicle-service && ./mvnw -q package -DskipTests)
+(cd quote-service && ./mvnw -q package -DskipTests)
+
+# 2. Einmalig den Browser installieren
+cd frontend
+npx playwright install chromium
+
+# 3. Tests starten – Playwright startet beide Services und das Frontend (Port 4300) selbst
+npm run e2e
+```
+
+Gegen eine schon laufende Umgebung (z. B. docker compose): `E2E_BASE_URL=http://localhost:8080 npm run e2e`.
+
+Die Tests prüfen den ganzen Weg mit echten Backends, die Tastaturbedienung, Fehlerfälle und mit **axe-core** alle Seiten-Zustände gegen WCAG 2.1 AA (**0 Verstöße**).
+
 ## Die erfundene Demo-Formel
 
 > Diese Formel ist **ausgedacht**. Sie hat nichts mit echten Versicherungstarifen zu tun.
@@ -173,7 +192,7 @@ Würde er sich selbst als „nicht bereit“ melden, nähme Kubernetes ihn aus d
 - Die Tabelle hat eine echte `<caption>` und `<th scope>`.
 - Fehler erkennt man nicht nur an der Farbe: Text, Symbol ⚠ und dickerer Rahmen.
 - Sichtbarer Fokus-Rahmen, Skip-Link „Zum Inhalt springen“, Kontraste mindestens 4,5:1, Klickflächen mindestens 44 px.
-- ESLint prüft Templates mit den Angular-Regeln für Barrierefreiheit. Automatische axe-Tests folgen in Phase 5.
+- **Geprüft in drei Stufen:** (1) ESLint prüft Templates beim Schreiben. (2) axe-core prüft in den E2E-Tests 6 Zustände der Seiten (0 Verstöße). (3) Ein E2E-Test bedient das ganze Formular nur mit der Tastatur. Automatische Tests finden nicht alles. Darum gehört auch ein Test mit einem echten Screenreader (z. B. NVDA) dazu.
 
 ### Keine Datenbank
 
