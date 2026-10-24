@@ -1,0 +1,63 @@
+# Deployment = "Halte immer N Pods mit diesem Image am Laufen."
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vehicle-service
+  labels:
+    app.kubernetes.io/name: vehicle-service
+    app.kubernetes.io/part-of: kfz-tarifrechner
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: vehicle-service
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: vehicle-service
+        app.kubernetes.io/part-of: kfz-tarifrechner
+    spec:
+      containers:
+        - name: vehicle-service
+          image: ghcr.io/GITHUB_USER/kfz-tarifrechner-vehicle-service:latest
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 8081
+          # Kleine Werte: Demo und Sandbox-Kontingent. requests = reserviert, limits = Obergrenze.
+          resources:
+            requests:
+              cpu: 100m        # 0,1 CPU-Kern
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          # Startup-Probe: Gibt Spring Boot bis zu 2 Minuten Zeit zum Starten.
+          # Erst danach beginnen Liveness und Readiness. So wird ein langsamer Start nicht als "tot" gewertet.
+          startupProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: http
+            periodSeconds: 3
+            failureThreshold: 40
+          # Liveness: "Lebt der Prozess noch?" Nein -> Kubernetes startet den Container neu.
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: http
+            periodSeconds: 10
+            failureThreshold: 3
+          # Readiness: "Kann er gerade Anfragen annehmen?" Nein -> der Service schickt ihm keinen Verkehr.
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: http
+            periodSeconds: 5
+            failureThreshold: 3
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
+            capabilities:
+              drop: ["ALL"]
+            seccompProfile:
+              type: RuntimeDefault

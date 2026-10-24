@@ -138,6 +138,16 @@ Stoppen: `docker compose -f deploy/docker/docker-compose.yml down`
 Der erste Build dauert einige Minuten (Maven und npm laden Abhängigkeiten). Danach geht es dank Cache schnell.
 Nur das Frontend hat einen Port nach außen. Die beiden Java-Services sind nur im internen Docker-Netz erreichbar.
 
+## Deployment auf OpenShift
+
+Die YAML-Dateien liegen in `deploy/openshift/`: ConfigMap, je ein Deployment und ein Service pro Dienst, eine Route nur für das Frontend.
+
+```bash
+oc apply -k deploy/openshift
+```
+
+Die komplette Anleitung für die kostenlose Red Hat Developer Sandbox (Konto, `oc`, Images, Fehlersuche) steht in **[docs/OPENSHIFT.md](docs/OPENSHIFT.md)**.
+
 ## Die erfundene Demo-Formel
 
 > Diese Formel ist **ausgedacht**. Sie hat nichts mit echten Versicherungstarifen zu tun.

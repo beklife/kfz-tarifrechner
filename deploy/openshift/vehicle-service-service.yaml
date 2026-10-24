@@ -1,0 +1,18 @@
+# Service = feste interne Adresse (http://vehicle-service:8081) für die Pods mit passendem Label.
+# Pods kommen und gehen (neue IP), der Service-Name bleibt gleich.
+# ClusterIP = nur innerhalb des Clusters erreichbar, nicht aus dem Internet.
+apiVersion: v1
+kind: Service
+metadata:
+  name: vehicle-service
+  labels:
+    app.kubernetes.io/name: vehicle-service
+    app.kubernetes.io/part-of: kfz-tarifrechner
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: vehicle-service
+  ports:
+    - name: http
+      port: 8081
+      targetPort: http

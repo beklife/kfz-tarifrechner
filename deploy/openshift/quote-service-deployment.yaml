@@ -1,0 +1,66 @@
+# Gleicher Aufbau wie vehicle-service-deployment.yaml (Erklärungen siehe dort).
+# Neu: Die Adresse des vehicle-service kommt aus der ConfigMap.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: quote-service
+  labels:
+    app.kubernetes.io/name: quote-service
+    app.kubernetes.io/part-of: kfz-tarifrechner
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: quote-service
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: quote-service
+        app.kubernetes.io/part-of: kfz-tarifrechner
+    spec:
+      containers:
+        - name: quote-service
+          image: ghcr.io/GITHUB_USER/kfz-tarifrechner-quote-service:latest
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 8082
+          env:
+            - name: VEHICLE_SERVICE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: kfz-tarifrechner-config
+                  key: VEHICLE_SERVICE_URL
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          startupProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: http
+            periodSeconds: 3
+            failureThreshold: 40
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: http
+            periodSeconds: 10
+            failureThreshold: 3
+          # Bewusst: Readiness hängt NICHT vom vehicle-service ab (siehe README).
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: http
+            periodSeconds: 5
+            failureThreshold: 3
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
+            capabilities:
+              drop: ["ALL"]
+            seccompProfile:
+              type: RuntimeDefault

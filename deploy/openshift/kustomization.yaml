@@ -1,0 +1,25 @@
+# Fasst alle Dateien zusammen:  oc apply -k deploy/openshift
+# Hier an EINER Stelle den GitHub-Namen eintragen (newName), statt in jeder Deployment-Datei.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - configmap.yaml
+  - vehicle-service-service.yaml
+  - quote-service-service.yaml
+  - frontend-service.yaml
+  - vehicle-service-deployment.yaml
+  - quote-service-deployment.yaml
+  - frontend-deployment.yaml
+  - frontend-route.yaml
+
+images:
+  - name: ghcr.io/GITHUB_USER/kfz-tarifrechner-vehicle-service
+    newName: ghcr.io/GITHUB_USER/kfz-tarifrechner-vehicle-service   # GITHUB_USER ersetzen (kleingeschrieben)
+    newTag: latest
+  - name: ghcr.io/GITHUB_USER/kfz-tarifrechner-quote-service
+    newName: ghcr.io/GITHUB_USER/kfz-tarifrechner-quote-service
+    newTag: latest
+  - name: ghcr.io/GITHUB_USER/kfz-tarifrechner-frontend
+    newName: ghcr.io/GITHUB_USER/kfz-tarifrechner-frontend
+    newTag: latest

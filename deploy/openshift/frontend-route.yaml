@@ -1,0 +1,20 @@
+# Route = OpenShift-Objekt für den Zugang aus dem Internet. Es gibt nur EINE Route: zum Frontend.
+# Ohne "host" erzeugt OpenShift automatisch eine Adresse wie
+#   https://frontend-<projekt>.apps.<cluster>.openshiftapps.com
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: frontend
+  labels:
+    app.kubernetes.io/name: frontend
+    app.kubernetes.io/part-of: kfz-tarifrechner
+spec:
+  to:
+    kind: Service
+    name: frontend
+  port:
+    targetPort: http
+  # HTTPS endet am OpenShift-Router ("edge"). Dahinter geht es per HTTP zum Pod.
+  tls:
+    termination: edge
+    insecureEdgeTerminationPolicy: Redirect   # http:// wird auf https:// umgeleitet

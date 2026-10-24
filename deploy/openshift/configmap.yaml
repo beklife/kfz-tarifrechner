@@ -1,0 +1,11 @@
+# Konfiguration getrennt vom Image: Gleiche Images, andere Umgebung -> nur die ConfigMap ändern.
+# Die Namen "vehicle-service" und "quote-service" sind die Kubernetes-Services (interne DNS-Namen).
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: kfz-tarifrechner-config
+  labels:
+    app.kubernetes.io/part-of: kfz-tarifrechner
+data:
+  VEHICLE_SERVICE_URL: http://vehicle-service:8081
+  QUOTE_SERVICE_URL: http://quote-service:8082
