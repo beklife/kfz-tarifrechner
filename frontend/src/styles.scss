@@ -1,0 +1,91 @@
+// Globale Styles. Farben als CSS-Variablen, damit Kontraste an einer Stelle geprüft werden.
+// Alle Text-Farben haben mindestens 4.5:1 Kontrast zum Hintergrund (WCAG 2.1 AA).
+
+:root {
+  --color-text: #1b1f24;          // auf Weiß ca. 16:1
+  --color-text-muted: #4a5260;    // auf Weiß ca. 7.6:1
+  --color-bg: #ffffff;
+  --color-surface: #f3f5f7;
+  --color-border: #6b7480;        // Rahmen von Eingabefeldern: mind. 3:1 (Nicht-Text-Kontrast)
+  --color-primary: #0b5563;       // auf Weiß ca. 7.9:1
+  --color-primary-dark: #073a44;
+  --color-on-primary: #ffffff;
+  --color-error: #b00020;         // auf Weiß ca. 6.9:1
+  --color-error-bg: #fdecee;
+  --color-banner-bg: #fff4ce;
+  --color-banner-text: #3d2e00;
+  --color-focus: #1d4ed8;         // auf Weiß ca. 6.7:1
+
+  --radius: 6px;
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 1rem;
+  --space-4: 1.5rem;
+  --space-5: 2.5rem;
+  --max-width: 60rem;
+
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  font-size: 100%; // respektiert die Schriftgröße, die der Nutzer im Browser eingestellt hat
+  line-height: 1.5;
+  color: var(--color-text);
+  background: var(--color-bg);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+}
+
+h1,
+h2,
+h3 {
+  line-height: 1.25;
+}
+
+a {
+  color: var(--color-primary);
+  text-underline-offset: 0.15em;
+
+  &:hover {
+    color: var(--color-primary-dark);
+  }
+}
+
+// Sichtbarer Fokus für Tastatur-Nutzer. :focus-visible zeigt ihn nicht bei Mausklicks.
+:focus-visible {
+  outline: 3px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+// Für Überschriften, die per Code fokussiert werden (tabindex="-1"): kein Rahmen nötig,
+// der Screenreader liest sie trotzdem vor.
+[tabindex='-1']:focus {
+  outline: none;
+}
+
+// Nur für Screenreader sichtbar (z. B. Live-Region), optisch versteckt.
+.visually-hidden {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+
+// Weniger Bewegung, wenn der Nutzer das im Betriebssystem eingestellt hat.
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+}

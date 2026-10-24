@@ -1,0 +1,29 @@
+<!-- Erster Tab-Stopp: Tastatur-Nutzer können die Navigation überspringen. -->
+<a class="skip-link" href="#main-content">Zum Inhalt springen</a>
+
+<header class="site-header">
+  <app-demo-banner />
+  <div class="header-inner">
+    <a class="brand" routerLink="/rechner">
+      Musterversicherung <span class="brand-hint">(fiktiv)</span>
+    </a>
+    <nav aria-label="Hauptnavigation">
+      <ul class="nav-list">
+        <li>
+          <a routerLink="/rechner" routerLinkActive="active" ariaCurrentWhenActive="page">Tarifrechner</a>
+        </li>
+        <li>
+          <a routerLink="/ueber" routerLinkActive="active" ariaCurrentWhenActive="page">Über das Projekt</a>
+        </li>
+      </ul>
+    </nav>
+  </div>
+</header>
+
+<main id="main-content" tabindex="-1">
+  <router-outlet />
+</main>
+
+<footer class="site-footer">
+  <p>Demo-Projekt. „Musterversicherung“, alle Fahrzeuge und alle Preise sind erfunden.</p>
+</footer>

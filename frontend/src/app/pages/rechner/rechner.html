@@ -1,0 +1,189 @@
+<h1>Kfz-Tarifrechner</h1>
+<p class="intro">
+  Geben Sie Fahrzeug, Alter, unfallfreie Jahre und Versicherungsart ein. Sie bekommen einen
+  <strong>erfundenen Beispielpreis</strong> und sehen genau, wie er entsteht.
+</p>
+
+<!-- Live-Region: existiert immer, damit Screenreader Änderungen am Text vorlesen. -->
+<div class="visually-hidden" role="status" aria-live="polite">{{ liveMessage() }}</div>
+
+<form class="quote-form" [formGroup]="form" (ngSubmit)="onSubmit()" novalidate aria-labelledby="form-heading">
+  <h2 id="form-heading">Ihre Angaben</h2>
+  <p class="hint">Alle Felder sind Pflichtfelder.</p>
+
+  <!-- Fahrzeug -->
+  @let vehicleError = errorFor('vehicleId');
+  <div class="field" [class.field-invalid]="vehicleError">
+    <label for="vehicleId">Fahrzeug</label>
+    @if (vehicleError) {
+      <p id="vehicleId-error" class="error-message"><span class="visually-hidden">Fehler: </span>{{ vehicleError }}</p>
+    }
+    @switch (vehiclesState()) {
+      @case ('loading') {
+        <p class="hint">Fahrzeuge werden geladen …</p>
+      }
+      @case ('error') {
+        <div class="alert alert-error">
+          <p>
+            <strong>Die Fahrzeugliste konnte nicht geladen werden.</strong>
+            Der Fahrzeugdienst ist gerade nicht erreichbar. Bitte später erneut versuchen.
+          </p>
+          <button type="button" class="button-secondary" (click)="loadVehicles()">Erneut versuchen</button>
+        </div>
+      }
+    }
+    <select
+      id="vehicleId"
+      formControlName="vehicleId"
+      [attr.aria-invalid]="vehicleError ? true : null"
+      [attr.aria-describedby]="describedBy('vehicleId', vehicleError)"
+    >
+      <option [ngValue]="null" disabled>Bitte auswählen</option>
+      @for (vehicle of vehicles(); track vehicle.id) {
+        <option [ngValue]="vehicle.id">
+          {{ vehicle.manufacturer }} {{ vehicle.model }} (Risikoklasse {{ vehicle.riskClass }})
+        </option>
+      }
+    </select>
+  </div>
+
+  <!-- Alter -->
+  @let ageError = errorFor('driverAge');
+  <div class="field" [class.field-invalid]="ageError">
+    <label for="driverAge">Alter der Fahrerin / des Fahrers</label>
+    <p id="driverAge-hint" class="hint">{{ hints.driverAge }}</p>
+    @if (ageError) {
+      <p id="driverAge-error" class="error-message"><span class="visually-hidden">Fehler: </span>{{ ageError }}</p>
+    }
+    <input
+      id="driverAge"
+      class="input-short"
+      type="number"
+      inputmode="numeric"
+      min="18"
+      max="99"
+      step="1"
+      autocomplete="off"
+      formControlName="driverAge"
+      [attr.aria-invalid]="ageError ? true : null"
+      [attr.aria-describedby]="describedBy('driverAge', ageError)"
+    />
+  </div>
+
+  <!-- Unfallfreie Jahre -->
+  @let yearsError = errorFor('accidentFreeYears');
+  <div class="field" [class.field-invalid]="yearsError">
+    <label for="accidentFreeYears">Unfallfreie Jahre</label>
+    <p id="accidentFreeYears-hint" class="hint">{{ hints.accidentFreeYears }}</p>
+    @if (yearsError) {
+      <p id="accidentFreeYears-error" class="error-message">
+        <span class="visually-hidden">Fehler: </span>{{ yearsError }}
+      </p>
+    }
+    <input
+      id="accidentFreeYears"
+      class="input-short"
+      type="number"
+      inputmode="numeric"
+      min="0"
+      max="50"
+      step="1"
+      autocomplete="off"
+      formControlName="accidentFreeYears"
+      [attr.aria-invalid]="yearsError ? true : null"
+      [attr.aria-describedby]="describedBy('accidentFreeYears', yearsError)"
+    />
+  </div>
+
+  <!-- Versicherungsart: Radio-Gruppe mit fieldset + legend -->
+  @let coverageError = errorFor('coverage');
+  <fieldset class="field" [class.field-invalid]="coverageError" [attr.aria-describedby]="coverageError ? 'coverage-error' : null">
+    <legend>Versicherungsart</legend>
+    @if (coverageError) {
+      <p id="coverage-error" class="error-message"><span class="visually-hidden">Fehler: </span>{{ coverageError }}</p>
+    }
+    <div class="radio-list">
+      @for (option of coverageOptions; track option.value) {
+        <div class="radio">
+          <input
+            type="radio"
+            [id]="'coverage-' + option.value"
+            formControlName="coverage"
+            [value]="option.value"
+            [attr.aria-describedby]="'coverage-' + option.value + '-hint'"
+          />
+          <label [for]="'coverage-' + option.value">
+            <span class="radio-title">{{ option.label }}</span>
+            <span class="hint" [id]="'coverage-' + option.value + '-hint'">{{ option.hint }}</span>
+          </label>
+        </div>
+      }
+    </div>
+  </fieldset>
+
+  <button type="submit" class="button-primary" [attr.aria-busy]="submitState() === 'loading' ? true : null">
+    {{ submitState() === 'loading' ? 'Preis wird berechnet …' : 'Preis berechnen' }}
+  </button>
+</form>
+
+@if (submitState() === 'error') {
+  <div class="alert alert-error">
+    <p><strong>Fehler:</strong> {{ errorMessage() }}</p>
+  </div>
+}
+
+@if (quote(); as quote) {
+  <section class="result" aria-labelledby="result-heading">
+    <h2 id="result-heading" #resultHeading tabindex="-1">Ihr Ergebnis</h2>
+    <p class="result-subtitle">{{ quote.vehicleName }} · {{ coverageLabel(quote.coverage) }}</p>
+
+    <dl class="prices">
+      <div class="price">
+        <dt>Jahrespreis</dt>
+        <dd>{{ quote.yearlyPrice | currency: 'EUR' }}</dd>
+      </div>
+      <div class="price">
+        <dt>Monatspreis</dt>
+        <dd>{{ quote.monthlyPrice | currency: 'EUR' }}</dd>
+      </div>
+    </dl>
+    <p class="hint">Erfundener Demo-Preis. Kein echtes Angebot.</p>
+
+    <!-- Auf kleinen Bildschirmen horizontal scrollbar. tabindex="0", damit man auch per Tastatur scrollen kann. -->
+    <div class="table-scroll" tabindex="0" role="region" aria-labelledby="breakdown-caption">
+      <table class="breakdown">
+        <caption id="breakdown-caption">So setzt sich der Jahrespreis zusammen</caption>
+        <thead>
+          <tr>
+            <th scope="col">Schritt</th>
+            <th scope="col">Beschreibung</th>
+            <th scope="col" class="num">Faktor / Betrag</th>
+            <th scope="col" class="num">Zwischensumme</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (step of quote.breakdown; track step.step) {
+            <tr>
+              <th scope="row">{{ step.step }}</th>
+              <td>{{ step.description }}</td>
+              <td class="num">
+                @if (isAmountStep(step.step)) {
+                  {{ step.factorOrAmount | currency: 'EUR' }}
+                } @else {
+                  × {{ step.factorOrAmount | number: '1.2-2' }}
+                }
+              </td>
+              <td class="num">{{ step.subtotal | currency: 'EUR' }}</td>
+            </tr>
+          }
+        </tbody>
+        <tfoot>
+          <tr>
+            <th scope="row" colspan="3">Jahrespreis (auf Cent gerundet)</th>
+            <td class="num">{{ quote.yearlyPrice | currency: 'EUR' }}</td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+  </section>
+}

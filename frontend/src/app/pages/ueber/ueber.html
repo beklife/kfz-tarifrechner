@@ -1,0 +1,70 @@
+<h1>Über das Projekt</h1>
+<p class="lead">
+  Dieser Tarifrechner ist ein <strong>Demo-Projekt</strong> für eine Bewerbung als Full-Stack-Entwickler.
+  Die Firma „Musterversicherung“, alle Fahrzeuge und alle Preise sind erfunden.
+</p>
+
+<section aria-labelledby="zeigt-heading">
+  <h2 id="zeigt-heading">Was das Projekt zeigt</h2>
+  <ul>
+    <li><strong>Microservices:</strong> Zwei Java-Dienste, die über REST miteinander sprechen.</li>
+    <li><strong>Robuste Kommunikation:</strong> Timeouts und klare Fehlermeldungen, wenn ein Dienst ausfällt.</li>
+    <li><strong>Container und OpenShift:</strong> Jeder Teil läuft in einem eigenen Container.</li>
+    <li><strong>Tests:</strong> Unit-Tests, Controller-Tests, Integrationstests und End-to-End-Tests.</li>
+    <li><strong>Barrierefreiheit:</strong> Bedienbar mit Tastatur und Screenreader (WCAG 2.1 AA).</li>
+  </ul>
+</section>
+
+<section aria-labelledby="architektur-heading">
+  <h2 id="architektur-heading">Architektur</h2>
+  <figure class="architecture">
+    <ol class="flow" aria-label="Weg einer Anfrage">
+      <li><div class="box">Browser</div></li>
+      <li>
+        <div class="box box-public">
+          Frontend (nginx)
+          <span class="box-note">einziger öffentlicher Zugang</span>
+        </div>
+      </li>
+      <li>
+        <ul class="flow-branch">
+          <li class="box">
+            vehicle-service
+            <span class="box-note">/api/vehicles – Fahrzeugdaten</span>
+          </li>
+          <li class="box">
+            quote-service
+            <span class="box-note">/api/quotes – Preisberechnung, fragt den vehicle-service</span>
+          </li>
+        </ul>
+      </li>
+    </ol>
+    <figcaption>
+      Der Browser spricht nur mit dem Frontend. nginx leitet <code>/api/vehicles</code> an den vehicle-service und
+      <code>/api/quotes</code> an den quote-service weiter. Der quote-service holt sich die Risikoklasse des
+      Fahrzeugs beim vehicle-service.
+    </figcaption>
+  </figure>
+</section>
+
+<section aria-labelledby="technik-heading">
+  <h2 id="technik-heading">Verwendete Technik</h2>
+  <dl class="tech-list">
+    <dt>Backend</dt>
+    <dd>Java 21, Spring Boot 3, Spring Web, Bean Validation, Actuator, RestClient</dd>
+    <dt>Frontend</dt>
+    <dd>Angular (Standalone Components, Signals, Reactive Forms), SCSS ohne UI-Bibliothek</dd>
+    <dt>Tests</dt>
+    <dd>JUnit 5, AssertJ, Mockito, MockMvc, Vitest, Playwright, axe-core</dd>
+    <dt>Betrieb</dt>
+    <dd>Docker, docker compose, OpenShift / Kubernetes, GitHub Actions</dd>
+  </dl>
+</section>
+
+<section aria-labelledby="code-heading">
+  <h2 id="code-heading">Quellcode</h2>
+  <p>
+    Der komplette Code mit Dokumentation liegt auf
+    <a [href]="githubUrl">GitHub (öffnet die Projektseite)</a>.
+  </p>
+</section>

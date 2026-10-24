@@ -1,0 +1,10 @@
+{
+  "/api/vehicles": {
+    "target": "http://localhost:8081",
+    "secure": false
+  },
+  "/api/quotes": {
+    "target": "http://localhost:8082",
+    "secure": false
+  }
+}

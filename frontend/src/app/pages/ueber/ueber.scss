@@ -1,0 +1,75 @@
+.lead {
+  max-width: 40rem;
+}
+
+section {
+  margin-top: var(--space-4);
+}
+
+.architecture {
+  margin: 0;
+  padding: var(--space-4);
+  background: var(--color-surface);
+  border-radius: var(--radius);
+}
+
+.flow,
+.flow-branch {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.flow > li + li::before {
+  // Pfeil nur zur Optik ("/ ''" = kein Text für Screenreader).
+  // Die Reihenfolge bekommen Screenreader über die Liste und die Bildunterschrift.
+  content: '↓' / '';
+  display: block;
+  margin: var(--space-1) 0 var(--space-1) var(--space-4);
+  font-size: 1.5rem;
+  line-height: 1;
+  color: var(--color-text-muted);
+}
+
+.flow-branch {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+.box {
+  display: inline-block;
+  padding: var(--space-2) var(--space-3);
+  font-weight: 600;
+  background: var(--color-bg);
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius);
+}
+
+.box-public {
+  border-color: var(--color-primary);
+  border-width: 3px;
+}
+
+.box-note {
+  display: block;
+  font-weight: 400;
+  font-size: 0.9rem;
+  color: var(--color-text-muted);
+}
+
+figcaption {
+  margin-top: var(--space-3);
+  max-width: 40rem;
+}
+
+.tech-list {
+  dt {
+    margin-top: var(--space-2);
+    font-weight: 600;
+  }
+
+  dd {
+    margin: 0;
+  }
+}

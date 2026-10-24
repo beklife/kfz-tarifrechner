@@ -87,6 +87,22 @@ Antwort (gekürzt):
 | 503 | vehicle-service aus, zu langsam oder fehlerhaft | „Der Fahrzeugdienst ist gerade nicht erreichbar. Bitte später erneut versuchen.“ |
 | 500 | Unerwarteter Fehler | allgemeiner Text, Details nur im Log |
 
+### Frontend
+
+Voraussetzung: Node.js 22 oder neuer. Beide Java-Services laufen (siehe oben).
+
+```bash
+cd frontend
+npm install
+npm start
+```
+
+Dann im Browser: http://localhost:4200
+Der Angular-Dev-Server leitet `/api/vehicles` an Port 8081 und `/api/quotes` an Port 8082 weiter (`proxy.conf.json`).
+Ist Port 4200 schon belegt: `npx ng serve --port 4300`.
+
+Weitere Befehle: `npm run lint` (ESLint inkl. Barrierefreiheits-Regeln), `npm test` (Unit-Tests mit Vitest).
+
 ## Die erfundene Demo-Formel
 
 > Diese Formel ist **ausgedacht**. Sie hat nichts mit echten Versicherungstarifen zu tun.
@@ -147,6 +163,17 @@ Darum: 400 mit einem Feldfehler an `vehicleId`, genau wie bei anderen Eingabefeh
 
 Wenn der vehicle-service ausfällt, bleibt der quote-service „ready“ und antwortet mit 503.
 Würde er sich selbst als „nicht bereit“ melden, nähme Kubernetes ihn aus dem Verkehr. Ein Ausfall würde sich dann wie eine Kette durch alle Services ziehen.
+
+### Barrierefreiheit (WCAG 2.1 AA) im Frontend
+
+- Jedes Feld hat ein `<label>`. Die Radio-Buttons stehen in `<fieldset>` + `<legend>`.
+- Hinweise und Fehlermeldungen sind per `aria-describedby` mit dem Feld verbunden. Fehler zeigen wir erst nach dem Verlassen des Feldes oder nach dem Absenden.
+- Nach dem Absenden mit Fehlern springt der Fokus zum ersten fehlerhaften Feld.
+- Nach der Berechnung springt der Fokus zur Überschrift „Ihr Ergebnis“. Eine `aria-live`-Region liest den Preis vor.
+- Die Tabelle hat eine echte `<caption>` und `<th scope>`.
+- Fehler erkennt man nicht nur an der Farbe: Text, Symbol ⚠ und dickerer Rahmen.
+- Sichtbarer Fokus-Rahmen, Skip-Link „Zum Inhalt springen“, Kontraste mindestens 4,5:1, Klickflächen mindestens 44 px.
+- ESLint prüft Templates mit den Angular-Regeln für Barrierefreiheit. Automatische axe-Tests folgen in Phase 5.
 
 ### Keine Datenbank
 
