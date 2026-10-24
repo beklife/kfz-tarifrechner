@@ -1,0 +1,30 @@
+server:
+  port: 8081
+  # Beim Stoppen laufende Anfragen noch fertig bearbeiten (wichtig für Kubernetes)
+  shutdown: graceful
+
+spring:
+  application:
+    name: vehicle-service
+  mvc:
+    # Fehler im Standardformat RFC 9457 (ProblemDetail) ausgeben
+    problemdetails:
+      enabled: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      # Liefert /actuator/health/liveness und /actuator/health/readiness
+      probes:
+        enabled: true
+
+# Swagger UI ist standardmäßig aus. Nur im Profil "dev" an (siehe application-dev.yml).
+springdoc:
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false
