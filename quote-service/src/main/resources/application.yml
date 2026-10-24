@@ -1,0 +1,50 @@
+server:
+  port: 8082
+  shutdown: graceful
+
+spring:
+  application:
+    name: quote-service
+  mvc:
+    problemdetails:
+      enabled: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      probes:
+        enabled: true
+
+springdoc:
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false
+
+# Erfundene Demo-Formel. Zahlen in Anführungszeichen: So werden sie direkt als Text
+# zu BigDecimal und nie als double (ungenau) gelesen.
+tariff:
+  # Grundpreis pro Jahr je Risikoklasse (in Euro)
+  base-prices:
+    1: "300.00"
+    2: "360.00"
+    3: "430.00"
+    4: "510.00"
+    5: "600.00"
+  # Altersfaktor je Altersgruppe (Grenzen inklusive). Muss 18 bis 99 lückenlos abdecken.
+  age-factors:
+    - { min-age: 18, max-age: 24, factor: "1.60" }
+    - { min-age: 25, max-age: 29, factor: "1.20" }
+    - { min-age: 30, max-age: 64, factor: "1.00" }
+    - { min-age: 65, max-age: 99, factor: "1.15" }
+  coverage-factors:
+    HAFTPFLICHT: "1.00"
+    TEILKASKO: "1.25"
+    VOLLKASKO: "1.70"
+  # 3 % Rabatt pro unfallfreiem Jahr, höchstens 50 %
+  discount-per-year: "0.03"
+  max-discount: "0.50"

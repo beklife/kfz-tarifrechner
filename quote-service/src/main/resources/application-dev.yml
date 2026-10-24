@@ -1,0 +1,7 @@
+# Start mit: ./mvnw spring-boot:run -Dspring-boot.run.profiles=dev
+# Swagger UI: http://localhost:8082/swagger-ui.html
+springdoc:
+  api-docs:
+    enabled: true
+  swagger-ui:
+    enabled: true

@@ -49,7 +49,53 @@ cd vehicle-service
 
 Tests: `./mvnw verify`
 
-_(Weitere Dienste folgen in den nächsten Phasen.)_
+### quote-service
+
+```bash
+cd quote-service
+./mvnw spring-boot:run -Dspring-boot.run.profiles=dev
+```
+
+Tests: `./mvnw verify`
+
+_(Die API `POST /api/quotes` kommt in Phase 3.)_
+
+## Die erfundene Demo-Formel
+
+> Diese Formel ist **ausgedacht**. Sie hat nichts mit echten Versicherungstarifen zu tun.
+
+**Jahrespreis = Grundpreis × Altersfaktor × Deckungsfaktor × (1 − Rabatt)**, am Ende auf Cent gerundet.
+**Monatspreis = Jahrespreis ÷ 12**, auf Cent gerundet.
+
+| 1. Risikoklasse | Grundpreis pro Jahr |
+|---|---|
+| 1 | 300 € |
+| 2 | 360 € |
+| 3 | 430 € |
+| 4 | 510 € |
+| 5 | 600 € |
+
+| 2. Alter | Faktor |
+|---|---|
+| 18–24 | 1,60 |
+| 25–29 | 1,20 |
+| 30–64 | 1,00 |
+| 65–99 | 1,15 |
+
+| 3. Versicherungsart | Faktor |
+|---|---|
+| Haftpflicht | 1,00 |
+| Teilkasko | 1,25 |
+| Vollkasko | 1,70 |
+
+**4. Schadenfreiheitsrabatt:** 3 % pro unfallfreiem Jahr, höchstens 50 %.
+
+**Beispiel:** Risikoklasse 3, 40 Jahre, Teilkasko, 5 unfallfreie Jahre
+430 € × 1,00 × 1,25 × (1 − 0,15) = 456,875 € → **456,88 € pro Jahr**, 456,88 € ÷ 12 → **38,07 € pro Monat**.
+
+**Regeln für die Eingabe:** Alter 18–99. Unfallfreie Jahre 0–50 und höchstens „Alter − 18“ (man fährt erst ab 18).
+
+Alle Zahlen stehen in `quote-service/src/main/resources/application.yml` unter `tariff:`.
 
 ## Design-Entscheidungen
 
@@ -76,6 +122,18 @@ Alle Fehler kommen im Standardformat **ProblemDetail** (RFC 9457) zurück. Beisp
 ```
 
 Vorteil: Jeder Client kann Fehler gleich auslesen.
+
+### Geld mit BigDecimal, nur einmal gerundet
+
+`double` kann viele Dezimalzahlen nicht exakt speichern (`0.1 + 0.2 = 0.30000000000000004`). Bei Geld führt das zu falschen Cents. Deshalb rechnen wir mit `BigDecimal`.
+Wir runden **nur einmal am Ende** (2 Stellen, `HALF_UP` = kaufmännisch). Würde man jeden Zwischenschritt runden, könnte das Ergebnis um einen Cent abweichen.
+Die Zwischensummen in der Aufschlüsselung sind nur für die Anzeige gerundet.
+
+### Tarif-Zahlen in der Konfiguration statt im Code
+
+Grundpreise und Faktoren stehen in `application.yml` und werden per `@ConfigurationProperties` in einen Record gelesen.
+Vorteile: Fachliche Zahlen kann man ändern, ohne Code zu ändern (z. B. per Umgebungsvariable in OpenShift). Der Code bleibt allgemein.
+Beim Start wird geprüft, ob die Zahlen vollständig sind (alle Risikoklassen, Alter 18–99 ohne Lücke). Wenn nicht, startet der Dienst nicht („Fail fast“).
 
 ### Swagger UI nur im Profil `dev`
 
