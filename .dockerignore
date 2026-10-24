@@ -1,0 +1,13 @@
+# Build-Kontext für alle Images ist das Repo-Hauptverzeichnis.
+# Diese Dateien braucht kein Image. Ohne sie ist der Build schneller und es landet nichts Unnötiges im Image.
+.git
+.github
+.remember
+docs
+**/target
+**/node_modules
+**/dist
+**/.angular
+**/test-results
+**/playwright-report
+**/*.md

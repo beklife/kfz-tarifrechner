@@ -122,6 +122,22 @@ Gegen eine schon laufende Umgebung (z. B. docker compose): `E2E_BASE_URL=http://
 
 Die Tests prüfen den ganzen Weg mit echten Backends, die Tastaturbedienung, Fehlerfälle und mit **axe-core** alle Seiten-Zustände gegen WCAG 2.1 AA (**0 Verstöße**).
 
+### Alles mit Docker (empfohlen)
+
+Voraussetzung: Docker mit Compose. Java oder Node braucht man dafür **nicht**.
+
+```bash
+docker compose -f deploy/docker/docker-compose.yml up --build
+```
+
+Dann im Browser: http://localhost:8080
+Ist Port 8080 belegt: `FRONTEND_PORT=8090 docker compose -f deploy/docker/docker-compose.yml up --build`
+
+Stoppen: `docker compose -f deploy/docker/docker-compose.yml down`
+
+Der erste Build dauert einige Minuten (Maven und npm laden Abhängigkeiten). Danach geht es dank Cache schnell.
+Nur das Frontend hat einen Port nach außen. Die beiden Java-Services sind nur im internen Docker-Netz erreichbar.
+
 ## Die erfundene Demo-Formel
 
 > Diese Formel ist **ausgedacht**. Sie hat nichts mit echten Versicherungstarifen zu tun.
@@ -166,6 +182,23 @@ Alle Zahlen stehen in `quote-service/src/main/resources/application.yml` unter `
 Fahrzeugdaten und Preisberechnung sind zwei verschiedene fachliche Themen. Darum gibt es zwei Services.
 Jeder kann einzeln geändert, deployt und skaliert werden. Zum Beispiel ändert sich der Tarif oft, die Fahrzeugliste selten.
 Für eine so kleine Anwendung wäre ein Monolith in echt einfacher. Hier geht es darum, Microservice-Kommunikation zu zeigen: REST-Aufruf, Timeouts, Fehlerbehandlung.
+
+### Nur das Frontend ist öffentlich (nginx als Gateway)
+
+Der Browser spricht nur mit **einer** Adresse: dem nginx im Frontend-Container. nginx liefert die Angular-Dateien aus und leitet weiter:
+`/api/vehicles` → vehicle-service, `/api/quotes` → quote-service. Alles andere unter `/api/` gibt 404.
+
+Warum?
+- **Weniger Angriffsfläche:** Von außen erreicht man nur zwei API-Pfade. Actuator, Swagger und interne Endpunkte bleiben intern.
+- **Kein CORS:** Seite und API haben dieselbe Adresse.
+- **Austauschbar:** Die Services können intern umziehen oder skalieren. Von außen ändert sich nichts.
+- Das ist ein einfaches **API-Gateway-Muster**. In größeren Systemen übernimmt das z. B. ein eigenes Gateway (Spring Cloud Gateway, Kong) oder ein Ingress.
+
+### Container: klein, ohne Root, mit Healthcheck
+
+- **Multi-Stage-Build:** Stufe 1 baut mit JDK/Maven bzw. Node. Stufe 2 enthält nur das Ergebnis (JRE + JAR bzw. nginx + Dateien). Frontend-Image ca. 54 MB, Java-Images ca. 350 MB.
+- **Ohne Root:** Die Java-Container laufen als Nutzer 10001 in Gruppe 0. Das Frontend nutzt `nginx-unprivileged` auf Port 8080. Beides ist nötig für OpenShift, weil es Container mit einer zufälligen Nutzer-ID ohne Root-Rechte startet.
+- **HEALTHCHECK:** Docker fragt regelmäßig `/actuator/health/readiness` bzw. `/healthz`. docker compose startet das Frontend erst, wenn beide Services „healthy“ sind.
 
 ### Timeouts beim Aufruf des vehicle-service
 

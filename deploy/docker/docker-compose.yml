@@ -1,0 +1,44 @@
+# Startet alles lokal:   docker compose -f deploy/docker/docker-compose.yml up --build
+# Dann im Browser:       http://localhost:8080   (anderer Port: FRONTEND_PORT=8090 voranstellen)
+# Stoppen:               docker compose -f deploy/docker/docker-compose.yml down
+
+name: kfz-tarifrechner
+
+services:
+  vehicle-service:
+    build:
+      context: ../..
+      dockerfile: deploy/docker/vehicle-service.Dockerfile
+    image: kfz-tarifrechner/vehicle-service:local
+    # Kein "ports": Der Dienst ist nur im internen Docker-Netz erreichbar, nicht vom eigenen Rechner aus.
+    restart: unless-stopped
+
+  quote-service:
+    build:
+      context: ../..
+      dockerfile: deploy/docker/quote-service.Dockerfile
+    image: kfz-tarifrechner/quote-service:local
+    environment:
+      # "vehicle-service" ist der Name des Dienstes oben. Docker löst ihn intern zur richtigen IP auf.
+      VEHICLE_SERVICE_URL: http://vehicle-service:8081
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ../..
+      dockerfile: deploy/docker/frontend.Dockerfile
+    image: kfz-tarifrechner/frontend:local
+    environment:
+      VEHICLE_SERVICE_URL: http://vehicle-service:8081
+      QUOTE_SERVICE_URL: http://quote-service:8082
+    ports:
+      # Einziger Zugang von außen: Rechner-Port -> Container-Port 8080.
+      # Ist 8080 belegt: FRONTEND_PORT=8090 docker compose ... up
+      - "${FRONTEND_PORT:-8080}:8080"
+    depends_on:
+      # Erst starten, wenn beide Services ihren Healthcheck bestanden haben.
+      vehicle-service:
+        condition: service_healthy
+      quote-service:
+        condition: service_healthy
+    restart: unless-stopped
