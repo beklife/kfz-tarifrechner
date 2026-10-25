@@ -30,7 +30,6 @@ Dann http://localhost:8080 öffnen. Mehr dazu unter [Lokal starten](#lokal-start
 |---|---|
 | [docs/LEARNING.md](docs/LEARNING.md) | Jede Datei erklärt, Glossar, der Weg einer Anfrage, „Was passiert, wenn …“ |
 | [docs/OPENSHIFT.md](docs/OPENSHIFT.md) | Schritt-für-Schritt-Anleitung für OpenShift (Red Hat Developer Sandbox) |
-| [docs/INTERVIEW.md](docs/INTERVIEW.md) | 60-Sekunden-Erklärung und typische Interview-Fragen |
 
 ## Architektur
 
