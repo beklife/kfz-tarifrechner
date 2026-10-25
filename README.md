@@ -138,6 +138,27 @@ Stoppen: `docker compose -f deploy/docker/docker-compose.yml down`
 Der erste Build dauert einige Minuten (Maven und npm laden Abhängigkeiten). Danach geht es dank Cache schnell.
 Nur das Frontend hat einen Port nach außen. Die beiden Java-Services sind nur im internen Docker-Netz erreichbar.
 
+## CI/CD mit GitHub Actions
+
+Die Pipeline steht in `.github/workflows/ci.yml` und läuft bei jedem Push und jedem Pull Request.
+
+```mermaid
+flowchart LR
+    A["backend<br/>mvn verify<br/>(2 Services parallel)"] --> C["e2e<br/>Playwright + axe"]
+    B["frontend<br/>lint, test, build"] --> C
+    C --> D["docker<br/>3 Images nach ghcr.io<br/>(nur main)"]
+```
+
+| Job | Was passiert |
+|---|---|
+| **backend** | `./mvnw verify` für vehicle-service und quote-service, parallel. Die JARs werden für den E2E-Job aufgehoben. |
+| **frontend** | `npm ci`, `npm run lint`, `npm test`, `npm run build` |
+| **e2e** | Startet beide JARs und das Frontend, dann alle Playwright-Tests inkl. axe. Bei Fehlern: HTML-Bericht als Download. |
+| **docker** | Nur auf `main` und nur wenn alles grün ist: baut die 3 Images und lädt sie nach `ghcr.io/<owner>/kfz-tarifrechner-*` (Tags `latest` und Commit-Hash). |
+
+Für das Hochladen der Images braucht man kein eigenes Secret. GitHub stellt in jedem Lauf automatisch ein `GITHUB_TOKEN` bereit.
+Nach dem ersten Lauf die drei Pakete auf GitHub auf **Public** stellen, damit OpenShift sie laden darf (siehe [OPENSHIFT.md, Schritt 4c](docs/OPENSHIFT.md)).
+
 ## Deployment auf OpenShift
 
 Die YAML-Dateien liegen in `deploy/openshift/`: ConfigMap, je ein Deployment und ein Service pro Dienst, eine Route nur für das Frontend.

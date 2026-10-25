@@ -1,0 +1,146 @@
+# CI/CD-Pipeline: Bei jedem Push und Pull Request wird alles gebaut und getestet.
+# Nur auf "main" und nur wenn alles grün ist, werden die Docker-Images in die GitHub Container Registry geladen.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:   # erlaubt einen manuellen Start im GitHub-Tab "Actions"
+
+# Ein neuer Push auf denselben Branch bricht den alten, noch laufenden Durchlauf ab.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+# Standard: nur lesen. Nur der Docker-Job bekommt zusätzlich Schreibrechte für Pakete.
+permissions:
+  contents: read
+
+jobs:
+  backend:
+    name: ${{ matrix.service }} (mvn verify)
+    runs-on: ubuntu-latest
+    # Matrix: derselbe Job läuft zweimal parallel, einmal pro Service.
+    strategy:
+      fail-fast: false
+      matrix:
+        service: [vehicle-service, quote-service]
+    defaults:
+      run:
+        working-directory: ${{ matrix.service }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven   # ~/.m2 zwischen Läufen speichern -> schneller
+      - name: Build and test
+        run: ./mvnw -B verify
+      # Die fertige JAR braucht der E2E-Job. So wird nicht doppelt gebaut.
+      - uses: actions/upload-artifact@v7
+        with:
+          name: ${{ matrix.service }}-jar
+          path: ${{ matrix.service }}/target/${{ matrix.service }}-*.jar
+          retention-days: 3
+
+  frontend:
+    name: frontend (lint, test, build)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+      - run: npm test
+      - run: npm run build
+
+  e2e:
+    name: e2e (Playwright + axe)
+    needs: [backend, frontend]
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      # Die JARs aus dem backend-Job an die Stelle legen, wo playwright.config.ts sie erwartet.
+      - uses: actions/download-artifact@v7
+        with:
+          name: vehicle-service-jar
+          path: vehicle-service/target
+      - uses: actions/download-artifact@v7
+        with:
+          name: quote-service-jar
+          path: quote-service/target
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      # Playwright startet beide JARs und "ng serve" selbst (webServer in playwright.config.ts).
+      - run: npm run e2e
+      # Nur bei Fehlern: HTML-Bericht mit Screenshots und Traces zum Herunterladen.
+      - uses: actions/upload-artifact@v7
+        if: failure()
+        with:
+          name: playwright-report
+          path: frontend/playwright-report
+          retention-days: 7
+
+  docker:
+    name: image ${{ matrix.image }}
+    needs: [backend, frontend, e2e]
+    # Nur nach einem Push auf main – nicht bei Pull Requests.
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write   # nötig, um nach ghcr.io zu pushen
+    strategy:
+      matrix:
+        image: [vehicle-service, quote-service, frontend]
+    steps:
+      - uses: actions/checkout@v7
+      # Registry-Namen müssen klein geschrieben sein. ${VAR,,} macht in Bash alles klein.
+      - name: Image name
+        run: echo "IMAGE=ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/kfz-tarifrechner-${{ matrix.image }}" >> "$GITHUB_ENV"
+      - uses: docker/setup-buildx-action@v4
+      # GITHUB_TOKEN gibt es automatisch in jedem Lauf. Kein eigenes Secret nötig.
+      - uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      # Zwei Tags: "latest" (für OpenShift) und der Commit-Hash (genau nachvollziehbar, was läuft).
+      - id: meta
+        uses: docker/metadata-action@v6
+        with:
+          images: ${{ env.IMAGE }}
+          tags: |
+            type=raw,value=latest
+            type=sha,format=short
+      - uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: deploy/docker/${{ matrix.image }}.Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          # Docker-Layer im GitHub-Cache speichern -> nächster Build viel schneller
+          cache-from: type=gha,scope=${{ matrix.image }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.image }}
