@@ -12,8 +12,25 @@ Das Projekt zeigt:
 
 - **Microservices:** Zwei kleine Java-Dienste sprechen per REST miteinander.
 - **Container und OpenShift/Kubernetes:** Alles läuft in Containern.
-- **Tests:** Unit-Tests, Controller-Tests, End-to-End-Tests.
+- **Tests:** Unit-, Controller-, Integrations- und End-to-End-Tests, dazu automatische Barrierefreiheits-Prüfung.
 - **Barrierefreies Angular-Frontend** (WCAG 2.1 AA).
+- **CI/CD:** GitHub Actions baut, testet und veröffentlicht die Images.
+
+## Schnellstart
+
+```bash
+docker compose -f deploy/docker/docker-compose.yml up --build
+```
+
+Dann http://localhost:8080 öffnen. Mehr dazu unter [Lokal starten](#lokal-starten).
+
+## Dokumentation
+
+| Dokument | Inhalt |
+|---|---|
+| [docs/LEARNING.md](docs/LEARNING.md) | Jede Datei erklärt, Glossar, der Weg einer Anfrage, „Was passiert, wenn …“ |
+| [docs/OPENSHIFT.md](docs/OPENSHIFT.md) | Schritt-für-Schritt-Anleitung für OpenShift (Red Hat Developer Sandbox) |
+| [docs/INTERVIEW.md](docs/INTERVIEW.md) | 60-Sekunden-Erklärung und typische Interview-Fragen |
 
 ## Architektur
 
@@ -34,6 +51,8 @@ flowchart LR
 | `docs/` | Lern- und Interview-Dokumente |
 
 ## Lokal starten
+
+Ohne Docker braucht man **Java 21** und **Node.js 22+**. Maven muss nicht installiert sein: `./mvnw` lädt die richtige Version selbst.
 
 ### vehicle-service
 
@@ -137,6 +156,15 @@ Stoppen: `docker compose -f deploy/docker/docker-compose.yml down`
 
 Der erste Build dauert einige Minuten (Maven und npm laden Abhängigkeiten). Danach geht es dank Cache schnell.
 Nur das Frontend hat einen Port nach außen. Die beiden Java-Services sind nur im internen Docker-Netz erreichbar.
+
+## Tests im Überblick
+
+| Teil | Anzahl | Art | Befehl |
+|---|---|---|---|
+| vehicle-service | 14 | Unit (Repository, Service mit Mockito), Controller (MockMvc), Anwendung + Probes | `./mvnw verify` |
+| quote-service | 74 | Preisformel (alle Grenzwerte, Rundung), Konfiguration, Validierung, Client (MockRestServiceServer), Controller, Integration mit echtem HTTP | `./mvnw verify` |
+| frontend | 16 | Unit-Tests mit Vitest: Validatoren, Formular, Fehler- und Ergebnis-Anzeige | `npm test` |
+| E2E | 16 | Playwright gegen echte Backends: Ablauf, Tastatur, Fehlerfälle; axe: 6 Seiten-Zustände ohne Verstöße | `npm run e2e` |
 
 ## CI/CD mit GitHub Actions
 
@@ -300,4 +328,12 @@ Die API-Dokumentation ist praktisch beim Entwickeln. In Produktion verrät sie a
 
 ## Was ich als Nächstes verbessern würde
 
-_(wird am Ende ergänzt)_
+| Thema | Was und warum |
+|---|---|
+| **Echte Datenbank** | PostgreSQL mit Spring Data JPA und Flyway-Migrationen. Nur eine neue Klasse für `VehicleRepository`, der Rest bleibt gleich. Zugangsdaten als Kubernetes-Secret. |
+| **Caching der Fahrzeugdaten** | Fahrzeugdaten ändern sich selten. Ein kleiner Cache im quote-service (z. B. Caffeine, wenige Minuten gültig) spart Aufrufe und hilft, wenn der vehicle-service kurz weg ist. |
+| **Retry und Circuit Breaker** | Mit Resilience4j: kurze Fehler automatisch wiederholen, und bei dauerhaftem Ausfall den vehicle-service eine Weile gar nicht mehr fragen (schnelle 503 statt Warten). |
+| **Authentifizierung** | Keycloak (OpenID Connect): Login im Frontend, JWT-Prüfung in den Services mit Spring Security. |
+| **Contract-Tests** | Die beiden Services teilen keinen Code. Ein Vertragstest (z. B. Spring Cloud Contract oder Pact) prüft automatisch, dass Antwort und Erwartung zusammenpassen. |
+| **Observability** | Verteiltes Tracing mit Micrometer Tracing + OpenTelemetry: eine Anfrage über alle Services verfolgen. Dazu Metriken (Prometheus) und strukturierte Logs. |
+| **Kleinere Punkte** | Upgrade auf Spring Boot 4; Content-Security-Policy-Header in nginx; mehrere Replicas mit PodDisruptionBudget; Screenreader-Test mit NVDA/VoiceOver. |
