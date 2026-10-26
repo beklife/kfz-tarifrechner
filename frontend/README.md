@@ -1,6 +1,6 @@
 # Frontend (Angular)
 
-Siehe das [Haupt-README](../README.md) und [docs/LEARNING.md](../docs/LEARNING.md).
+Siehe das [Haupt-README](../README.md).
 
 | Befehl | Was er macht |
 |---|---|

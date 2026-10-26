@@ -24,13 +24,6 @@ docker compose -f deploy/docker/docker-compose.yml up --build
 
 Dann http://localhost:8080 öffnen. Mehr dazu unter [Lokal starten](#lokal-starten).
 
-## Dokumentation
-
-| Dokument | Inhalt |
-|---|---|
-| [docs/LEARNING.md](docs/LEARNING.md) | Jede Datei erklärt, Glossar, der Weg einer Anfrage, „Was passiert, wenn …“ |
-| [docs/OPENSHIFT.md](docs/OPENSHIFT.md) | Schritt-für-Schritt-Anleitung für OpenShift (Red Hat Developer Sandbox) |
-
 ## Architektur
 
 ```mermaid
@@ -47,7 +40,6 @@ flowchart LR
 | `quote-service/` | Java-Dienst: berechnet den Preis (Port 8082) |
 | `frontend/` | Angular-Oberfläche |
 | `deploy/` | Docker- und OpenShift-Dateien |
-| `docs/` | Lern- und Interview-Dokumente |
 
 ## Lokal starten
 
@@ -184,17 +176,40 @@ flowchart LR
 | **docker** | Nur auf `main` und nur wenn alles grün ist: baut die 3 Images und lädt sie nach `ghcr.io/<owner>/kfz-tarifrechner-*` (Tags `latest` und Commit-Hash). |
 
 Für das Hochladen der Images braucht man kein eigenes Secret. GitHub stellt in jedem Lauf automatisch ein `GITHUB_TOKEN` bereit.
-Nach dem ersten Lauf die drei Pakete auf GitHub auf **Public** stellen, damit OpenShift sie laden darf (siehe [OPENSHIFT.md, Schritt 4c](docs/OPENSHIFT.md)).
+Nach dem ersten Lauf die drei Pakete auf GitHub auf **Public** stellen, damit OpenShift sie laden darf:
+GitHub-Profil → **Packages** → Paket öffnen → **Package settings** → **Change visibility** → **Public**.
 
 ## Deployment auf OpenShift
 
-Die YAML-Dateien liegen in `deploy/openshift/`: ConfigMap, je ein Deployment und ein Service pro Dienst, eine Route nur für das Frontend.
+Die YAML-Dateien liegen in `deploy/openshift/`:
+
+| Datei | Inhalt |
+|---|---|
+| `configmap.yaml` | Interne Adressen der Services (`VEHICLE_SERVICE_URL`, `QUOTE_SERVICE_URL`) |
+| `*-deployment.yaml` | Je ein Deployment: kleine CPU-/Speicher-Grenzen, Startup-, Liveness- und Readiness-Probes, ohne Root |
+| `*-service.yaml` | Je ein interner Service (ClusterIP) |
+| `frontend-route.yaml` | Die **einzige** öffentliche Route (HTTPS) – zum Frontend |
+| `kustomization.yaml` | Fasst alles zusammen und legt die Image-Namen fest |
+
+Getestet mit der kostenlosen [Red Hat Developer Sandbox](https://developers.redhat.com/developer-sandbox):
 
 ```bash
+# 1. Anmelden (Befehl aus der Web-Konsole: Name oben rechts -> "Copy login command")
+oc login --token=<token> --server=<server>
+
+# 2. Alles anlegen: ConfigMap, 3 Services, 3 Deployments, 1 Route
 oc apply -k deploy/openshift
+
+# 3. Warten, bis alle Pods "Running" und "1/1" sind
+oc get pods -w
+
+# 4. Öffentliche Adresse anzeigen und im Browser mit https:// öffnen
+oc get route frontend -o jsonpath='{.spec.host}{"\n"}'
 ```
 
-Die komplette Anleitung für die kostenlose Red Hat Developer Sandbox (Konto, `oc`, Images, Fehlersuche) steht in **[docs/OPENSHIFT.md](docs/OPENSHIFT.md)**.
+Die Sandbox stoppt Anwendungen nach einiger Zeit (Pods auf 0). Wieder starten: `oc scale deploy --all --replicas=1`.
+
+Die YAML-Dateien wurden außerdem lokal in einem Kubernetes-Cluster ([kind](https://kind.sigs.k8s.io/)) getestet, mit zufälliger Nutzer-ID wie bei OpenShift.
 
 ## Die erfundene Demo-Formel
 
