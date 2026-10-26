@@ -24,7 +24,9 @@ export class RechnerPage {
 
   async open(): Promise<void> {
     await this.page.goto('/rechner');
-    await expect(this.vehicle.locator('option')).not.toHaveCount(1);
+    // Warten, bis die Fahrzeuge geladen sind: Option 2 = erstes echtes Fahrzeug (Option 1 = "Bitte auswählen").
+    // Nicht "not.toHaveCount(1)": Das stimmt auch bei 0 Optionen, also bevor Angular überhaupt etwas gezeichnet hat.
+    await expect(this.vehicle.locator('option').nth(1)).toBeAttached();
   }
 
   coverage(label: 'Haftpflicht' | 'Teilkasko' | 'Vollkasko'): Locator {
