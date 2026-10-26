@@ -3,7 +3,7 @@ import { Locator, Page, expect } from '@playwright/test';
 /**
  * "Page Object": kapselt, wie man die Rechner-Seite bedient.
  * Die Tests lesen sich dadurch wie eine Beschreibung, und Selektoren stehen nur an einer Stelle.
- * Wir suchen Elemente wie ein Mensch: über Rolle und sichtbaren Namen (getByRole, getByLabel).
+ * Wir suchen Elemente wie ein Mensch bzw. Screenreader: über Rolle und Namen (getByRole).
  */
 export class RechnerPage {
   readonly vehicle: Locator;
@@ -14,9 +14,11 @@ export class RechnerPage {
   readonly liveRegion: Locator;
 
   constructor(private readonly page: Page) {
-    this.vehicle = page.getByLabel('Fahrzeug', { exact: true });
-    this.driverAge = page.getByLabel('Alter der Fahrerin / des Fahrers');
-    this.accidentFreeYears = page.getByLabel('Unfallfreie Jahre');
+    // getByRole + name nutzt den "accessible name", also das, was ein Screenreader vorliest.
+    // Der Stern (*) hat aria-hidden und gehört deshalb NICHT zum Namen: "Fahrzeug", nicht "Fahrzeug *".
+    this.vehicle = page.getByRole('combobox', { name: 'Fahrzeug', exact: true });
+    this.driverAge = page.getByRole('spinbutton', { name: 'Alter der Fahrerin / des Fahrers', exact: true });
+    this.accidentFreeYears = page.getByRole('spinbutton', { name: 'Unfallfreie Jahre', exact: true });
     this.submitButton = page.getByRole('button', { name: 'Preis berechnen' });
     this.resultHeading = page.getByRole('heading', { name: 'Ihr Ergebnis' });
     this.liveRegion = page.getByRole('status');

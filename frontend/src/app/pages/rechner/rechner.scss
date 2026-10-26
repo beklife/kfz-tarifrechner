@@ -42,6 +42,12 @@ legend {
   font-size: 0.95rem;
 }
 
+// Stern für Pflichtfelder. aria-hidden im HTML: Screenreader sagen stattdessen "erforderlich" (aria-required).
+.required-marker {
+  color: var(--color-error);
+  font-weight: 700;
+}
+
 .error-message {
   margin: 0 0 var(--space-2);
   color: var(--color-error);

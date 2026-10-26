@@ -31,6 +31,10 @@ test.describe('Tarifrechner', () => {
 
     await expect(rechner.vehicle).toBeFocused();
     await expect(rechner.vehicle).toHaveAttribute('aria-invalid', 'true');
+    // Pflichtfelder: sichtbarer Stern + "erforderlich" für Screenreader
+    await expect(rechner.vehicle).toHaveAttribute('aria-required', 'true');
+    await expect(rechner.coverage('Haftpflicht')).toHaveAttribute('required', '');
+    await expect(page.getByText('Felder mit * sind Pflichtfelder.')).toBeVisible();
     // Die Fehlermeldung ist über aria-describedby mit dem Feld verbunden.
     await expect(rechner.driverAge).toHaveAccessibleDescription(/Bitte das Alter angeben\./);
     await expect(page.getByText('Bitte eine Versicherungsart auswählen.')).toBeVisible();
