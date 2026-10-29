@@ -1,0 +1,166 @@
+<h1>Barrierefreiheit</h1>
+<p class="lead">
+  Diese Demo soll für alle bedienbar sein: mit Maus, nur mit der Tastatur, mit Screenreader und mit
+  vergrößerter Schrift. Ziel ist <strong>WCAG 2.1 Stufe AA</strong>. Hier steht, wie wir das prüfen, und das
+  Ergebnis des letzten automatischen Tests.
+</p>
+
+<section aria-labelledby="ergebnis-heading">
+  <h2 id="ergebnis-heading">Ergebnis des letzten automatischen Tests</h2>
+
+  @if (report.isLoading()) {
+    <p role="status">Testbericht wird geladen …</p>
+  } @else if (report.error()) {
+    <div class="alert" role="alert">
+      <p><strong>Der Testbericht konnte nicht geladen werden.</strong> Bitte später erneut versuchen.</p>
+      <button type="button" class="button-secondary" (click)="report.reload()">Erneut laden</button>
+    </div>
+  } @else if (view(); as view) {
+    @let data = view.data;
+    @let totals = view.totals;
+
+    <ul class="tiles" aria-label="Zusammenfassung">
+      <li class="tile" [class.tile-ok]="totals.violations === 0" [class.tile-bad]="totals.violations > 0">
+        <span class="tile-value">{{ totals.violations }}</span>
+        <span class="tile-label">
+          Verstöße gegen WCAG 2.1 AA
+          @if (totals.violations === 0) {
+            <span class="tile-note"><span aria-hidden="true">✓</span> keine gefunden</span>
+          }
+        </span>
+      </li>
+      <li class="tile">
+        <span class="tile-value">{{ totals.states }}</span>
+        <span class="tile-label">geprüfte Seiten-Zustände</span>
+      </li>
+      <li class="tile">
+        <span class="tile-value">{{ totals.passes }}</span>
+        <span class="tile-label">bestandene Regel-Prüfungen</span>
+      </li>
+      <li class="tile">
+        <span class="tile-value">{{ totals.incomplete }}</span>
+        <span class="tile-label">Hinweise für die manuelle Prüfung</span>
+      </li>
+    </ul>
+
+    <dl class="meta">
+      <div>
+        <dt>Geprüft am</dt>
+        <dd>{{ data.generatedAt | date: 'd. MMMM y, HH:mm' }} Uhr</dd>
+      </div>
+      <div>
+        <dt>Werkzeug</dt>
+        <dd>axe-core {{ data.axeVersion }} in Playwright ({{ data.browser }})</dd>
+      </div>
+      <div>
+        <dt>Geprüfte Regeln</dt>
+        <dd>{{ standardLabel(data.standard) }}</dd>
+      </div>
+      @if (data.commit) {
+        <div>
+          <dt>Code-Stand</dt>
+          <dd>
+            <a [href]="commitUrl(data.commit)">Commit {{ data.commit.slice(0, 7) }} auf GitHub</a>
+          </dd>
+        </div>
+      }
+    </dl>
+
+    <div class="table-scroll" tabindex="0" role="region" aria-labelledby="states-caption">
+      <table class="states">
+        <caption id="states-caption">Ergebnis je Seiten-Zustand</caption>
+        <thead>
+          <tr>
+            <th scope="col">Zustand</th>
+            <th scope="col">Seite</th>
+            <th scope="col" class="num">Verstöße</th>
+            <th scope="col" class="num">Bestanden</th>
+            <th scope="col" class="num">Manuell prüfen</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (state of data.states; track state.id) {
+            <tr>
+              <th scope="row">{{ state.name }}</th>
+              <td><code>{{ state.path }}</code></td>
+              <td class="num">
+                @if (state.violations === 0) {
+                  <span class="ok">0 <span aria-hidden="true">✓</span></span>
+                } @else {
+                  <span class="bad">{{ state.violations }} <span aria-hidden="true">✗</span></span>
+                }
+              </td>
+              <td class="num">{{ state.passes }}</td>
+              <td class="num">{{ state.incomplete }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    @if (manualRules().length > 0) {
+      <details class="manual">
+        <summary>Was heißt „manuell prüfen“? ({{ manualRules().length }} {{ manualRules().length === 1 ? 'Regel' : 'Regeln' }})</summary>
+        <p>
+          Manche Regeln kann axe nicht sicher automatisch entscheiden, z. B. Kontraste vor Bildern oder Verläufen.
+          Diese Stellen muss ein Mensch ansehen. Es sind <strong>keine Fehler</strong>, sondern Hinweise.
+          Die Texte kommen direkt von axe (Englisch):
+        </p>
+        <ul>
+          @for (rule of manualRules(); track rule.id) {
+            <li><code>{{ rule.id }}</code>: {{ rule.help }}</li>
+          }
+        </ul>
+      </details>
+    }
+  }
+</section>
+
+<section aria-labelledby="pruefung-heading">
+  <h2 id="pruefung-heading">So prüfen wir</h2>
+  <ol class="steps">
+    <li>
+      <strong>Beim Schreiben:</strong> ESLint prüft jedes Template mit den Barrierefreiheits-Regeln von Angular
+      (z. B. jedes Feld braucht ein Label).
+    </li>
+    <li>
+      <strong>Bei jedem Push:</strong> Die CI-Pipeline startet die ganze Anwendung und prüft alle Seiten-Zustände
+      oben mit axe-core. Ein Verstoß lässt die Pipeline fehlschlagen – dann wird nichts veröffentlicht.
+    </li>
+    <li>
+      <strong>Nur mit Tastatur:</strong> Ein End-to-End-Test bedient das ganze Formular ohne Maus: Skip-Link,
+      Felder, Radio-Gruppe mit Pfeiltasten, Absenden mit Enter. Dieser Test hat einen Fehler gefunden, den axe nicht
+      gemeldet hat.
+    </li>
+    <li>
+      <strong>Von Hand:</strong> Test mit einem echten Screenreader (NVDA oder VoiceOver) –
+      <em>für diese Demo noch offen.</em>
+    </li>
+  </ol>
+</section>
+
+<section aria-labelledby="massnahmen-heading">
+  <h2 id="massnahmen-heading">Was umgesetzt ist</h2>
+  <ul class="checklist">
+    <li>Jedes Feld hat ein sichtbares Label. Pflichtfelder haben einen Stern und <code>aria-required</code>.</li>
+    <li>Hinweise und Fehler sind mit <code>aria-describedby</code> am Feld angebunden.</li>
+    <li>Fehler zeigen wir mit Text, Symbol und Rahmen – nie nur mit Farbe.</li>
+    <li>Nach dem Absenden springt der Fokus zum ersten Fehler bzw. zum Ergebnis.</li>
+    <li>Das Ergebnis wird über eine <code>aria-live</code>-Region vorgelesen.</li>
+    <li>Tabellen haben <code>&lt;caption&gt;</code> und <code>&lt;th scope&gt;</code>.</li>
+    <li>Skip-Link „Zum Inhalt springen“, sichtbarer Fokus, Kontrast mindestens 4,5 : 1.</li>
+    <li>Auch schmale Bildschirme (375 px) werden automatisch mitgeprüft.</li>
+  </ul>
+</section>
+
+<section aria-labelledby="grenzen-heading">
+  <h2 id="grenzen-heading">Grenzen</h2>
+  <p>
+    Automatische Werkzeuge wie axe finden nur einen Teil der Probleme (geschätzt 30–50 %). „0 Verstöße“ heißt also
+    nicht „perfekt barrierefrei“. Dazu gehören immer auch Tests von Hand und mit Menschen, die assistive Technik nutzen.
+  </p>
+  <p class="note">
+    Dies ist eine Demo. Ein echtes Produkt bräuchte hier eine vollständige Erklärung zur Barrierefreiheit mit
+    Kontakt- und Beschwerdemöglichkeit (Barrierefreiheitsstärkungsgesetz, BFSG).
+  </p>
+</section>

@@ -131,6 +131,7 @@ npm run e2e
 Gegen eine schon laufende Umgebung (z. B. docker compose): `E2E_BASE_URL=http://localhost:8080 npm run e2e`.
 
 Die Tests prüfen den ganzen Weg mit echten Backends, die Tastaturbedienung, Fehlerfälle und mit **axe-core** alle Seiten-Zustände gegen WCAG 2.1 AA (**0 Verstöße**).
+Dabei entsteht `frontend/public/a11y-report.json`. Die Seite **/barrierefreiheit** in der App zeigt diesen Bericht an.
 
 ### Alles mit Docker (empfohlen)
 
@@ -154,8 +155,8 @@ Nur das Frontend hat einen Port nach außen. Die beiden Java-Services sind nur i
 |---|---|---|---|
 | vehicle-service | 14 | Unit (Repository, Service mit Mockito), Controller (MockMvc), Anwendung + Probes | `./mvnw verify` |
 | quote-service | 74 | Preisformel (alle Grenzwerte, Rundung), Konfiguration, Validierung, Client (MockRestServiceServer), Controller, Integration mit echtem HTTP | `./mvnw verify` |
-| frontend | 16 | Unit-Tests mit Vitest: Validatoren, Formular, Fehler- und Ergebnis-Anzeige | `npm test` |
-| E2E | 16 | Playwright gegen echte Backends: Ablauf, Tastatur, Fehlerfälle; axe: 6 Seiten-Zustände ohne Verstöße | `npm run e2e` |
+| frontend | 21 | Unit-Tests mit Vitest: Validatoren, Formular, Fehler- und Ergebnis-Anzeige, Barrierefreiheits-Bericht | `npm test` |
+| E2E | 18 | Playwright gegen echte Backends: Ablauf, Tastatur, Fehlerfälle; axe: 7 Seiten-Zustände ohne Verstöße | `npm run e2e` |
 
 ## CI/CD mit GitHub Actions
 
@@ -172,7 +173,7 @@ flowchart LR
 |---|---|
 | **backend** | `./mvnw verify` für vehicle-service und quote-service, parallel. Die JARs werden für den E2E-Job aufgehoben. |
 | **frontend** | `npm ci`, `npm run lint`, `npm test`, `npm run build` |
-| **e2e** | Startet beide JARs und das Frontend, dann alle Playwright-Tests inkl. axe. Bei Fehlern: HTML-Bericht als Download. |
+| **e2e** | Startet beide JARs und das Frontend, dann alle Playwright-Tests inkl. axe. Gibt den frischen Barrierefreiheits-Bericht an den docker-Job weiter. Bei Fehlern: HTML-Bericht als Download. |
 | **docker** | Nur auf `main` und nur wenn alles grün ist: baut die 3 Images und lädt sie nach `ghcr.io/<owner>/kfz-tarifrechner-*` (Tags `latest` und Commit-Hash). |
 
 Für das Hochladen der Images braucht man kein eigenes Secret. GitHub stellt in jedem Lauf automatisch ein `GITHUB_TOKEN` bereit.
@@ -298,7 +299,8 @@ Würde er sich selbst als „nicht bereit“ melden, nähme Kubernetes ihn aus d
 - Die Tabelle hat eine echte `<caption>` und `<th scope>`.
 - Fehler erkennt man nicht nur an der Farbe: Text, Symbol ⚠ und dickerer Rahmen.
 - Sichtbarer Fokus-Rahmen, Skip-Link „Zum Inhalt springen“, Kontraste mindestens 4,5:1, Klickflächen mindestens 44 px.
-- **Geprüft in drei Stufen:** (1) ESLint prüft Templates beim Schreiben. (2) axe-core prüft in den E2E-Tests 6 Zustände der Seiten (0 Verstöße). (3) Ein E2E-Test bedient das ganze Formular nur mit der Tastatur. Automatische Tests finden nicht alles. Darum gehört auch ein Test mit einem echten Screenreader (z. B. NVDA) dazu.
+- **Geprüft in drei Stufen:** (1) ESLint prüft Templates beim Schreiben. (2) axe-core prüft in den E2E-Tests 7 Zustände der Seiten (0 Verstöße). (3) Ein E2E-Test bedient das ganze Formular nur mit der Tastatur. Automatische Tests finden nicht alles. Darum gehört auch ein Test mit einem echten Screenreader (z. B. NVDA) dazu.
+- **Bericht in der App:** Die Seite `/barrierefreiheit` zeigt das Ergebnis des letzten axe-Laufs (Verstöße, bestandene Regeln, Hinweise zur manuellen Prüfung, axe-Version, Commit). Die CI erzeugt den Bericht bei jedem Push neu und baut ihn ins Frontend-Image ein. So zeigt die Live-Seite immer den Testlauf genau dieses Code-Stands.
 
 ### Keine Datenbank
 

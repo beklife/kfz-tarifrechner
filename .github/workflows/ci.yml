@@ -93,7 +93,14 @@ jobs:
       - run: npm ci
       - run: npx playwright install --with-deps chromium
       # Playwright startet beide JARs und "ng serve" selbst (webServer in playwright.config.ts).
+      # Schreibt dabei auch frontend/public/a11y-report.json (Ergebnis der axe-Prüfung).
       - run: npm run e2e
+      # Den frischen Barrierefreiheits-Bericht an den docker-Job weitergeben (Seite /barrierefreiheit).
+      - uses: actions/upload-artifact@v7
+        with:
+          name: a11y-report
+          path: frontend/public/a11y-report.json
+          retention-days: 7
       # Nur bei Fehlern: HTML-Bericht mit Screenshots und Traces zum Herunterladen.
       - uses: actions/upload-artifact@v7
         if: failure()
@@ -116,6 +123,12 @@ jobs:
         image: [vehicle-service, quote-service, frontend]
     steps:
       - uses: actions/checkout@v7
+      # Frontend-Image bekommt den Barrierefreiheits-Bericht aus genau diesem Lauf.
+      - uses: actions/download-artifact@v7
+        if: matrix.image == 'frontend'
+        with:
+          name: a11y-report
+          path: frontend/public
       # Registry-Namen müssen klein geschrieben sein. ${VAR,,} macht in Bash alles klein.
       - name: Image name
         run: echo "IMAGE=ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/kfz-tarifrechner-${{ matrix.image }}" >> "$GITHUB_ENV"

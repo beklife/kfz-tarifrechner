@@ -1,0 +1,94 @@
+{
+  "generatedAt": "2026-10-29T13:05:27.887Z",
+  "axeVersion": "4.14.0",
+  "browser": "Chromium 156.0.8078.4",
+  "standard": [
+    "wcag2a",
+    "wcag2aa",
+    "wcag21a",
+    "wcag21aa"
+  ],
+  "commit": "70126b6ce64bcb59d026764389f3fe30b27aaf31",
+  "states": [
+    {
+      "id": "rechner-leer",
+      "name": "Rechner: leeres Formular",
+      "path": "/rechner",
+      "violations": 0,
+      "passes": 26,
+      "incomplete": 0,
+      "violationRules": [],
+      "incompleteRules": []
+    },
+    {
+      "id": "rechner-fehler",
+      "name": "Rechner: Formular mit Fehlermeldungen",
+      "path": "/rechner",
+      "violations": 0,
+      "passes": 26,
+      "incomplete": 0,
+      "violationRules": [],
+      "incompleteRules": []
+    },
+    {
+      "id": "rechner-ergebnis",
+      "name": "Rechner: mit Ergebnis und Tabelle",
+      "path": "/rechner",
+      "violations": 0,
+      "passes": 30,
+      "incomplete": 0,
+      "violationRules": [],
+      "incompleteRules": []
+    },
+    {
+      "id": "rechner-fehler-laden",
+      "name": "Rechner: Fahrzeugliste nicht ladbar",
+      "path": "/rechner",
+      "violations": 0,
+      "passes": 26,
+      "incomplete": 0,
+      "violationRules": [],
+      "incompleteRules": []
+    },
+    {
+      "id": "rechner-mobil",
+      "name": "Rechner: mobile Breite (375 px)",
+      "path": "/rechner",
+      "violations": 0,
+      "passes": 31,
+      "incomplete": 1,
+      "violationRules": [],
+      "incompleteRules": [
+        {
+          "id": "color-contrast",
+          "help": "Elements must meet minimum color contrast ratio thresholds"
+        }
+      ]
+    },
+    {
+      "id": "ueber",
+      "name": "Über das Projekt",
+      "path": "/ueber",
+      "violations": 0,
+      "passes": 22,
+      "incomplete": 0,
+      "violationRules": [],
+      "incompleteRules": []
+    },
+    {
+      "id": "barrierefreiheit",
+      "name": "Barrierefreiheit (Bericht-Seite)",
+      "path": "/barrierefreiheit",
+      "violations": 0,
+      "passes": 26,
+      "incomplete": 1,
+      "violationRules": [],
+      "incompleteRules": [
+        {
+          "id": "color-contrast",
+          "help": "Elements must meet minimum color contrast ratio thresholds"
+        }
+      ]
+    }
+  ]
+}

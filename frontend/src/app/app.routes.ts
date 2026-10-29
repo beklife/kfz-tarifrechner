@@ -14,5 +14,10 @@ export const routes: Routes = [
     title: 'Über das Projekt – Musterversicherung (Demo)',
     loadComponent: () => import('./pages/ueber/ueber').then((m) => m.Ueber),
   },
+  {
+    path: 'barrierefreiheit',
+    title: 'Barrierefreiheit – Musterversicherung (Demo)',
+    loadComponent: () => import('./pages/barrierefreiheit/barrierefreiheit').then((m) => m.Barrierefreiheit),
+  },
   { path: '**', redirectTo: 'rechner' },
 ];

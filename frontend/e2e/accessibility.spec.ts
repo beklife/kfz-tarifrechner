@@ -1,31 +1,18 @@
-import AxeBuilder from '@axe-core/playwright';
-import { Page, expect, test } from '@playwright/test';
+import { expect, test } from '@playwright/test';
+import { expectNoAxeViolations } from './a11y-report';
 import { RechnerPage } from './rechner.page';
 
 /**
  * Automatische Prüfung mit axe-core gegen WCAG 2.1 A und AA.
- * Wir prüfen jeden wichtigen Zustand: leer, mit Fehlern, mit Ergebnis, Fehlermeldung, Über-Seite.
+ * Wir prüfen jeden wichtigen Zustand: leer, mit Fehlern, mit Ergebnis, Fehlermeldung, Über-Seite, Bericht-Seite.
  * Ziel: null Verstöße. (axe findet etwa 30–50 % der Probleme. Den Rest prüft man von Hand,
  * z. B. mit Tastatur und Screenreader.)
+ * Die Ergebnisse landen in public/a11y-report.json und werden auf /barrierefreiheit angezeigt.
  */
-async function expectNoAxeViolations(page: Page): Promise<void> {
-  const results = await new AxeBuilder({ page })
-    .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
-    .analyze();
-
-  // Bei Fehlern sieht man im Testbericht direkt Regel, Beschreibung und betroffene Elemente.
-  const summary = results.violations.map((violation) => ({
-    rule: violation.id,
-    description: violation.help,
-    elements: violation.nodes.map((node) => node.target.join(' ')),
-  }));
-  expect(summary).toEqual([]);
-}
-
 test.describe('Barrierefreiheit (axe)', () => {
   test('Rechner: leeres Formular', async ({ page }) => {
     await new RechnerPage(page).open();
-    await expectNoAxeViolations(page);
+    await expectNoAxeViolations(page, 'rechner-leer');
   });
 
   test('Rechner: Formular mit Fehlermeldungen', async ({ page }) => {
@@ -34,7 +21,7 @@ test.describe('Barrierefreiheit (axe)', () => {
     await rechner.submitButton.click();
     await expect(page.locator('.error-message')).toHaveCount(4);
 
-    await expectNoAxeViolations(page);
+    await expectNoAxeViolations(page, 'rechner-fehler');
   });
 
   test('Rechner: mit Ergebnis und Tabelle', async ({ page }) => {
@@ -44,7 +31,7 @@ test.describe('Barrierefreiheit (axe)', () => {
     await rechner.submitButton.click();
     await expect(rechner.resultHeading).toBeVisible();
 
-    await expectNoAxeViolations(page);
+    await expectNoAxeViolations(page, 'rechner-ergebnis');
   });
 
   test('Rechner: Fahrzeugliste nicht ladbar', async ({ page }) => {
@@ -52,14 +39,14 @@ test.describe('Barrierefreiheit (axe)', () => {
     await page.goto('/rechner');
     await expect(page.getByRole('button', { name: 'Erneut versuchen' })).toBeVisible();
 
-    await expectNoAxeViolations(page);
+    await expectNoAxeViolations(page, 'rechner-fehler-laden');
   });
 
   test('Über das Projekt', async ({ page }) => {
     await page.goto('/ueber');
     await expect(page.getByRole('heading', { level: 1, name: 'Über das Projekt' })).toBeVisible();
 
-    await expectNoAxeViolations(page);
+    await expectNoAxeViolations(page, 'ueber');
   });
 
   test('Rechner: mobile Breite (375 px)', async ({ page }) => {
@@ -70,6 +57,13 @@ test.describe('Barrierefreiheit (axe)', () => {
     await rechner.submitButton.click();
     await expect(rechner.resultHeading).toBeVisible();
 
-    await expectNoAxeViolations(page);
+    await expectNoAxeViolations(page, 'rechner-mobil');
+  });
+
+  test('Barrierefreiheit: Bericht-Seite', async ({ page }) => {
+    await page.goto('/barrierefreiheit');
+    await expect(page.getByRole('table', { name: 'Ergebnis je Seiten-Zustand' })).toBeVisible();
+
+    await expectNoAxeViolations(page, 'barrierefreiheit');
   });
 });

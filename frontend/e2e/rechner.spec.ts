@@ -143,7 +143,7 @@ test.describe('Tarifrechner', () => {
 });
 
 test.describe('Rahmen der Seite', () => {
-  for (const path of ['/rechner', '/ueber']) {
+  for (const path of ['/rechner', '/barrierefreiheit', '/ueber']) {
     test(`zeigt den Demo-Hinweis auf ${path}`, async ({ page }) => {
       await page.goto(path);
       await expect(page.getByText('Demo mit erfundenen Preisen. Keine echte Versicherung.')).toBeVisible();

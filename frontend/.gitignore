@@ -42,3 +42,6 @@ __screenshots__/
 # System files
 .DS_Store
 Thumbs.db
+
+# Einzel-Ergebnisse der axe-Tests (werden zu public/a11y-report.json zusammengefügt)
+a11y-results/

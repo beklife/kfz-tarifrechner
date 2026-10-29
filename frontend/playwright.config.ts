@@ -8,6 +8,9 @@ const isCi = !!process.env['CI'];
 
 export default defineConfig({
   testDir: './e2e',
+  // Vorher alte axe-Ergebnisse löschen, nachher public/a11y-report.json schreiben (siehe e2e/a11y-report.ts)
+  globalSetup: './e2e/global-setup.ts',
+  globalTeardown: './e2e/global-teardown.ts',
   fullyParallel: true,
   forbidOnly: isCi,
   retries: isCi ? 1 : 0,
